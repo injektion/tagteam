@@ -145,5 +145,5 @@ for root, subdirs, files in os.walk(walk_dir):
                         print(' NOT FOUND: %s' % (initialkey))
 
                 else:
-                    print('Unable to find bpm (%s) or key (%s) - ensure analyzed in Serato?' % (bpm, initialkey))
+                    print('Unable to find bpm (%s) or key (%s) - ensure analyzed by your dj software?' % (bpm, initialkey))
 
