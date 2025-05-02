@@ -11,11 +11,12 @@
 # 3. It will add a "KEY-BPM" tag to your files
 # 4. You can then sort by this tag in your DJ software
 
-
 import subprocess
 import os
 import sys
 import music_tag
+from mutagen.mp3 import HeaderNotFoundError # Import the exception
+
 
 # I like to use the COMPOSER field.  Can't display it on Traktor tho.
 # LABEL is a nice easy one that works on both Traktor + Serato
@@ -87,7 +88,33 @@ keys = {
     '9d': '9A',
     '10d': '10A',
     '11d': '11A',
-    '12d': '12B'    
+    '12d': '12B',   
+
+    '1A': '1A',
+    '2A': '2A',
+    '3A': '3A',
+    '4A': '4A',
+    '5A': '5A',
+    '6A': '6A',
+    '7A': '7A',
+    '8A': '8A',
+    '9A': '9A',
+    '10A': '10A',
+    '11A': '11A',
+    '12A': '12A',
+    '1B': '1B',
+    '2B': '2B',
+    '3B': '3B',
+    '4B': '4B',
+    '5B': '5B',
+    '6B': '6B',
+    '7B': '7B',
+    '8B': '8B',
+    '9B': '9B',
+    '10B': '10B',
+    '11B': '11B',
+    '12B': '12B'
+
 }
 
 walk_dir = None
@@ -103,6 +130,9 @@ print('Starting directory = ' + os.path.abspath(walk_dir))
 
 for root, subdirs, files in os.walk(walk_dir):
         for filename in files:
+            if filename.startswith('.'):
+                continue
+
             if [ele for ele in fileformats if ("." + ele in filename.lower())]:
                 file_path = os.path.join(root, filename)
                 print('%s' % (file_path))
@@ -111,19 +141,36 @@ for root, subdirs, files in os.walk(walk_dir):
                 bpm = None
                 initialkey = None
 
-                song = music_tag.load_file(file_path)
+                try:
+                    song = music_tag.load_file(file_path)
+                except HeaderNotFoundError:
+                    print(f"  ERROR: Could not load MP3 header for {filename}. Skipping file.")
+                    continue # Skip to the next file
+                except Exception as e: # Catch other potential loading errors
+                    print(f"  ERROR: Could not load file {filename}: {e}. Skipping file.")
+                    continue # Skip to the next file                
                 #print(song.__dict__)
                 #song.pprint()
                 #quit()
 
                 #throw these thru a .get to make sure they're not missing
+                getkey = None # Initialize to None
+                getbpm = None # Initialize to None
 
                 if isinstance(song, music_tag.id3.Mp3File):
-                    getkey = song.mfile['TKEY'].text[0]
-                    getbpm = song.mfile['TBPM'].text[0]
+                    # Check if TKEY exists before accessing
+                    if 'TKEY' in song.mfile:
+                        getkey = song.mfile['TKEY'].text[0]
+                    # Check if TBPM exists before accessing
+                    if 'TBPM' in song.mfile:
+                        getbpm = song.mfile['TBPM'].text[0]
                 elif isinstance(song, music_tag.wave.WaveId3File):
-                    getkey = song.mfile['TKEY'].text[0]
-                    getbpm = song.mfile['TBPM'].text[0]
+                     # Check if TKEY exists before accessing
+                    if 'TKEY' in song.mfile:
+                        getkey = song.mfile['TKEY'].text[0]
+                    # Check if TBPM exists before accessing
+                    if 'TBPM' in song.mfile:
+                        getbpm = song.mfile['TBPM'].text[0]
                 elif isinstance(song, music_tag.flac.FlacFile):
                     if "initialkey" in song.mfile:
                         getkey = song.mfile['initialkey'][0]
@@ -131,13 +178,14 @@ for root, subdirs, files in os.walk(walk_dir):
                         getbpm = song.mfile['bpm'][0]
                 else:
                     print("Unknown file type")
-                    sys.exit()
+                    continue # Use continue instead of sys.exit() to process other files
+                
                 
                 if getkey:
                     initialkey = getkey
 
                 if getbpm:
-                    bpm = int(getbpm)
+                    bpm = int(round(float(getbpm)))
                 
                 if initialkey and bpm:
                     for key in keys:
